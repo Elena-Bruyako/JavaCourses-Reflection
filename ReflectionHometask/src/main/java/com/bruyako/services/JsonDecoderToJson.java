@@ -14,54 +14,48 @@ public class JsonDecoderToJson {
 
     public static String toJson(Object object) throws IllegalAccessException {
 
-        StringBuilder json = new StringBuilder("{");
+        StringBuilder jsonStringBuilder = new StringBuilder("{");
 
         Class clazz = object.getClass();
         Field[] arrayFields = clazz.getDeclaredFields();
 
         for (int i = 0; i < arrayFields.length; i++) {
+            arrayFields[i].setAccessible(true);
 
-            JsonValue annotation = arrayFields[i].getAnnotation(JsonValue.class);
-            CustomDateFormat annotation1 = arrayFields[i].getAnnotation(CustomDateFormat.class);
+            JsonValue annotationValue = arrayFields[i].getAnnotation(JsonValue.class);
+            CustomDateFormat annotationDate = arrayFields[i].getAnnotation(CustomDateFormat.class);
 
-            if (annotation != null) {
-                arrayFields[i].setAccessible(true);
-                String newName = annotation.name();
+            if (annotationValue != null) {
+                String annotationName = annotationValue.name();
                 String value = arrayFields[i].get(object).toString();
+                jsonStringBuilder.append(buildJsonValue(annotationName, value));
 
-                json.append(formatDisplay(newName, value));
-
-            } else if (annotation1 != null) {
-                arrayFields[i].setAccessible(true);
-                String newName = annotation1.format();
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(newName);
+            } else if (annotationDate != null) {
+                String dateFormat = annotationDate.format();
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
                 String strTime = simpleDateFormat.format(new Date());
-                String valueName = arrayFields[i].getName();
-
-                json.append(formatDisplay(valueName, strTime));
+                String fieldName = arrayFields[i].getName();
+                jsonStringBuilder.append(buildJsonValue(fieldName, strTime));
 
             } else {
-                arrayFields[i].setAccessible(true);
                 String valueName = arrayFields[i].getName();
                 String value = arrayFields[i].get(object).toString();
-
-                json.append(formatDisplay(valueName, value));
+                jsonStringBuilder.append(buildJsonValue(valueName, value));
             }
-
             if (i != arrayFields.length - 1) {
-                json.append(",");
+                jsonStringBuilder.append(",");
             }
         }
-        return json.append("}").toString();
+        return jsonStringBuilder.append("}").toString();
     }
 
-    private static String formatDisplay(String valueName, String value) {
+    private static String buildJsonValue(String jsonKey, String jsonValue) {
 
         StringBuilder str = new StringBuilder();
         str.append("\"");
-        str.append(valueName);
+        str.append(jsonKey);
         str.append("\":\"");
-        str.append(value);
+        str.append(jsonValue);
         str.append("\"");
 
         return str.toString();
